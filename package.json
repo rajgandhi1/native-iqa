@@ -1,0 +1,34 @@
+{
+  "name": "native-iqa",
+  "version": "0.1.0",
+  "description": "High-performance, no-reference image quality assessment for Node.js (BRISQUE + heuristics via Rust/N-API)",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "cargo build --release && node scripts/copy-binary.js",
+    "build:debug": "cargo build",
+    "test": "node --test __tests__/index.test.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["image", "quality", "iqa", "brisque", "native", "napi"],
+  "license": "MIT",
+  "devDependencies": {
+    "@napi-rs/cli": "^3.6.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "napi": {
+    "binaryName": "native_iqa",
+    "targets": [
+      "aarch64-apple-darwin",
+      "x86_64-apple-darwin",
+      "x86_64-unknown-linux-gnu"
+    ]
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "native_iqa.*.node"
+  ]
+}
