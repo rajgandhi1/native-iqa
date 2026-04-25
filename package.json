@@ -4,10 +4,17 @@
   "description": "High-performance, no-reference image quality assessment for Node.js (BRISQUE + heuristics via Rust/N-API)",
   "main": "index.js",
   "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./index.js",
+      "default": "./index.js"
+    }
+  },
   "scripts": {
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
     "test": "node --test __tests__/index.test.js",
+    "bench": "node bench/run.js",
     "prepublishOnly": "npm run build"
   },
   "keywords": ["image", "quality", "iqa", "brisque", "native", "napi"],
