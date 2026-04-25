@@ -66,7 +66,7 @@ impl Task for AnalyzeTask {
     type JsValue = IqaResult;
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
-        pipeline::analyze(&self.data).map_err(|e| napi::Error::from_reason(e))
+        pipeline::analyze(&self.data).map_err(napi::Error::from_reason)
     }
 
     fn resolve(&mut self, _env: Env, output: Self::Output) -> napi::Result<Self::JsValue> {
@@ -94,7 +94,7 @@ impl Task for QuickScoreTask {
     fn compute(&mut self) -> napi::Result<Self::Output> {
         pipeline::analyze(&self.data)
             .map(|r| r.score)
-            .map_err(|e| napi::Error::from_reason(e))
+            .map_err(napi::Error::from_reason)
     }
 
     fn resolve(&mut self, _env: Env, output: Self::Output) -> napi::Result<Self::JsValue> {
@@ -114,7 +114,7 @@ impl Task for ValidateTask {
     type JsValue = ValidationResult;
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
-        let result = pipeline::analyze(&self.data).map_err(|e| napi::Error::from_reason(e))?;
+        let result = pipeline::analyze(&self.data).map_err(napi::Error::from_reason)?;
 
         // Clone options for use in resolve
         let opts = ValidationOptions {
@@ -168,7 +168,7 @@ impl Task for BatchTask {
         // Process each image; propagate first error.
         self.items
             .iter()
-            .map(|d| pipeline::analyze(d).map_err(|e| napi::Error::from_reason(e)))
+            .map(|d| pipeline::analyze(d).map_err(napi::Error::from_reason))
             .collect()
     }
 
