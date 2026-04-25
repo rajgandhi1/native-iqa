@@ -57,8 +57,29 @@ fn gray_to_f64(gray: &GrayImage) -> Vec<f64> {
 }
 
 // ---------------------------------------------------------------------------
-// Main entry point
+// Main entry points
 // ---------------------------------------------------------------------------
+
+/// Returns only the BRISQUE score, skipping all heuristics.
+pub fn score_only(data: &[u8]) -> Result<f64, String> {
+    let img = decode(data)?;
+
+    let (w, h) = img.dimensions();
+    if w < MIN_DIM || h < MIN_DIM {
+        return Err(format!(
+            "Image too small ({}×{}). Minimum is {}×{}.",
+            w, h, MIN_DIM, MIN_DIM
+        ));
+    }
+
+    let img = maybe_resize(img);
+    let gray = to_gray(&img);
+
+    let (width, height) = gray.dimensions();
+    let pixels_f64 = gray_to_f64(&gray);
+
+    Ok(brisque::analyze(&pixels_f64, width as usize, height as usize).score)
+}
 
 pub fn analyze(data: &[u8]) -> Result<AnalysisResult, String> {
     let img = decode(data)?;

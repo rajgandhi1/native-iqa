@@ -81,7 +81,7 @@ Returns a pass/fail result against configurable thresholds.
 
 ```js
 const result = await iqa.validate(buffer, {
-  minScore: 50,
+  maxScore: 50,
   rejectBlurry: true,
   rejectBadExposure: true,
 });
@@ -91,7 +91,7 @@ const result = await iqa.validate(buffer, {
 Options:
 
 ```
-minScore           number    Reject if score exceeds this value. Default 60.
+maxScore           number    Reject if score exceeds this value. Default 60.
 rejectBlurry       boolean   Reject blurry images. Default false.
 rejectBadExposure  boolean   Reject underexposed or overexposed images. Default false.
 ```

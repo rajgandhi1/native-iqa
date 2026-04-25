@@ -162,14 +162,14 @@ test('validate() passes a good image with default thresholds', async () => {
   assert.ok(Array.isArray(failures));
 });
 
-test('validate() rejects an image that exceeds a strict minScore', async () => {
+test('validate() rejects an image that exceeds a strict maxScore', async () => {
   // Set the threshold 0.5 below the actual score — always makes the image fail.
   // Note: the real SVR can return 0 for clean synthetic images, so we cannot
-  // floor the threshold at 0 (0 > 0 is false). Passing a sub-zero minScore is
+  // floor the threshold at 0 (0 > 0 is false). Passing a sub-zero maxScore is
   // valid: the validate logic uses it as-is, so score > (score - 0.5) is always true.
   const { score } = await iqa.analyze(gradientPng);
   const strictThreshold = score - 0.5;
-  const { passed, failures } = await iqa.validate(gradientPng, { minScore: strictThreshold });
+  const { passed, failures } = await iqa.validate(gradientPng, { maxScore: strictThreshold });
   assert.equal(passed, false);
   assert.ok(failures.length > 0);
 });
