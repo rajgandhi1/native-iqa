@@ -1,6 +1,6 @@
 {
   "name": "native-iqa",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "High-performance, no-reference image quality assessment for Node.js (BRISQUE + heuristics via Rust/N-API)",
   "main": "index.js",
   "types": "index.d.ts",

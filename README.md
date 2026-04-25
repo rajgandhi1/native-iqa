@@ -60,13 +60,13 @@ Score bands:
 60+     poor
 ```
 
-The score is derived from BRISQUE's GGD shape parameter, not a trained SVM. It measures statistical regularity in local contrast patterns. Natural, sharp photos score low. Flat, blurry, or noisy images score high.
+The score is computed by a pre-trained SVR model using 36 BRISQUE features extracted from MSCN coefficients across two scales. Natural, sharp photos score low. Flat, blurry, or noisy images score high.
 
 ---
 
 ### quickScore(buffer)
 
-Returns only the numeric score. Slightly faster than analyze when you do not need the full result.
+Returns only the numeric score. Faster than `analyze` because it skips blur, exposure, and noise detection entirely.
 
 ```js
 const score = await iqa.quickScore(buffer);
@@ -100,7 +100,7 @@ rejectBadExposure  boolean   Reject underexposed or overexposed images. Default 
 
 ### scoreBatch(buffers)
 
-Analyze multiple images. Results are returned in the same order as input.
+Analyze multiple images in parallel. Uses a Rayon thread pool internally so throughput scales with available cores. Results are returned in the same order as input.
 
 ```js
 const results = await iqa.scoreBatch([bufferA, bufferB, bufferC]);
@@ -116,7 +116,9 @@ Prebuilt binaries are provided for:
 
 - macOS arm64 (Apple Silicon)
 - macOS x64
-- Linux x64
+- Linux x64 (glibc)
+- Linux arm64 (glibc)
+- Windows x64
 
 ---
 
@@ -128,6 +130,16 @@ Requires Rust 1.88 or later and the napi-rs CLI.
 npm run build
 npm test
 ```
+
+---
+
+## Benchmark
+
+```
+npm run bench
+```
+
+Runs `analyze`, `quickScore`, and `scoreBatch` at 256, 512, and 1024px over 50 iterations and prints median and p95 latency. No extra dependencies required.
 
 ---
 

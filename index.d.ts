@@ -13,13 +13,13 @@ export interface IqaResult {
    */
   score: number
   /** Human-readable quality label: "excellent" | "good" | "acceptable" | "poor" */
-  quality: 'excellent' | 'good' | 'acceptable' | 'poor'
+  quality: string
   /** True when Laplacian variance indicates motion/focus blur. */
   isBlurry: boolean
   /** Exposure assessment: "normal" | "underexposed" | "overexposed" */
-  exposure: 'normal' | 'underexposed' | 'overexposed'
+  exposure: string
   /** Noise estimate: "low" | "medium" | "high" */
-  noiseLevel: 'low' | 'medium' | 'high'
+  noiseLevel: string
   /** List of human-readable warnings (empty for clean images). */
   warnings: Array<string>
 }
