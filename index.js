@@ -26,7 +26,9 @@ function loadNative() {
   }
 
   // Fallback: try the unqualified name (useful during development)
-  const fallback = path.join(__dirname, 'target', 'release', 'libnative_iqa.dylib');
+  const ext = { darwin: '.dylib', linux: '.so', win32: '.dll' }[platform] ?? '.so';
+  const prefix = platform === 'win32' ? '' : 'lib';
+  const fallback = path.join(__dirname, 'target', 'release', `${prefix}native_iqa${ext}`);
   if (existsSync(fallback)) {
     return require(fallback);
   }
