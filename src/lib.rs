@@ -66,8 +66,7 @@ impl Task for AnalyzeTask {
     type JsValue = IqaResult;
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
-        pipeline::analyze(&self.data)
-            .map_err(|e| napi::Error::from_reason(e))
+        pipeline::analyze(&self.data).map_err(|e| napi::Error::from_reason(e))
     }
 
     fn resolve(&mut self, _env: Env, output: Self::Output) -> napi::Result<Self::JsValue> {
@@ -115,8 +114,7 @@ impl Task for ValidateTask {
     type JsValue = ValidationResult;
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
-        let result = pipeline::analyze(&self.data)
-            .map_err(|e| napi::Error::from_reason(e))?;
+        let result = pipeline::analyze(&self.data).map_err(|e| napi::Error::from_reason(e))?;
 
         // Clone options for use in resolve
         let opts = ValidationOptions {
@@ -127,11 +125,7 @@ impl Task for ValidateTask {
         Ok((result, opts))
     }
 
-    fn resolve(
-        &mut self,
-        _env: Env,
-        output: Self::Output,
-    ) -> napi::Result<Self::JsValue> {
+    fn resolve(&mut self, _env: Env, output: Self::Output) -> napi::Result<Self::JsValue> {
         let (result, opts) = output;
         let mut failures = Vec::new();
 

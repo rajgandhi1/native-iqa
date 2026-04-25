@@ -143,10 +143,8 @@ pub fn fit_aggd(data: &[f64]) -> (f64, f64, f64, f64) {
     }
 
     let r_hat = (mean_abs * mean_abs) / mean_sq;
-    let r_hat_norm = r_hat
-        * (gamma_hat.powi(3) + 1.0)
-        * (gamma_hat + 1.0)
-        / (gamma_hat.powi(2) + 1.0).powi(2);
+    let r_hat_norm =
+        r_hat * (gamma_hat.powi(3) + 1.0) * (gamma_hat + 1.0) / (gamma_hat.powi(2) + 1.0).powi(2);
 
     let alpha = find_shape(r_hat_norm);
 

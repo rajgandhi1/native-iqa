@@ -16,7 +16,7 @@ fn laplacian(pixels: &[f64], width: usize, height: usize) -> Vec<f64> {
                      + pixels[idx + width]       // bottom
                      + pixels[idx - 1]           // left
                      + pixels[idx + 1]           // right
-                     - 4.0 * pixels[idx];        // centre
+                     - 4.0 * pixels[idx]; // centre
             out[idx] = resp;
         }
     }

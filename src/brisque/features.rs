@@ -8,7 +8,6 @@
 ///   2  from GGD fit to MSCN coefficients
 ///   4  from AGGD fit to each of 4 pairwise-product maps (H, V, D1, D2)
 ///   → 2 + 4*4 = 18
-
 use super::mscn::compute_mscn;
 use super::stats::{fit_aggd, fit_ggd};
 
@@ -62,14 +61,10 @@ fn extract_scale_features(pixels: &[f64], width: usize, height: usize) -> [f64; 
 
     [
         // GGD
-        alpha, sigma_sq,
-        // H
-        h_shape, h_eta, h_sl, h_sr,
-        // V
-        v_shape, v_eta, v_sl, v_sr,
-        // D1
-        d1_shape, d1_eta, d1_sl, d1_sr,
-        // D2
+        alpha, sigma_sq, // H
+        h_shape, h_eta, h_sl, h_sr, // V
+        v_shape, v_eta, v_sl, v_sr, // D1
+        d1_shape, d1_eta, d1_sl, d1_sr, // D2
         d2_shape, d2_eta, d2_sl, d2_sr,
     ]
 }
