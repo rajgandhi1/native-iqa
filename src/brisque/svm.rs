@@ -1,139 +1,66 @@
-//! BRISQUE scoring via calibrated feature mapping.
+//! BRISQUE scoring via a pre-trained RBF-kernel SVR.
 //!
-//! # Score semantics
-//!
-//! The score is in [0, 100] where lower = better quality:
-//!   0–20  Excellent
-//!  20–40  Good
-//!  40–60  Acceptable
-//!  60+    Poor
-//!
-//! # Algorithm
-//!
-//! V1 uses a direct, interpretable linear feature-to-score mapping calibrated
-//! against published BRISQUE score distributions on the LIVE IQA database.
-//! The mapping captures the three main axes of no-reference quality:
-//!
-//!   1. GGD shape (α) of MSCN coefficients:
-//!      Natural images → α ≈ 2–3 (Gaussian-like).
-//!      Distorted images → α < 1.8 (heavier tails).
-//!
-//!   2. MSCN local variance (σ²):
-//!      Low for flat / blurry images, high for noisy images.
-//!
-//!   3. AGGD shape of pairwise products:
-//!      High for structured natural images, low for heavily distorted ones.
-//!
-//! A future upgrade can drop in a full libsvm epsilon-SVR model (trained on
-//! the LIVE dataset) by replacing `compute_brisque_score` with an SVM
-//! decision function while keeping the rest of the pipeline unchanged.
+//! Model source: opencv/opencv_contrib `modules/quality/samples/`
+//! (brisque_model_live.yml + brisque_range_live.yml)
+//! Trained on the LIVE IQA database (EPS-SVR, C=1024, gamma=0.05).
+
+use super::model_data::{ALPHAS, FEATURE_MAX, FEATURE_MIN, FEATURE_COUNT, GAMMA, RHO, SVS, SV_COUNT};
 
 // ---------------------------------------------------------------------------
-// Scoring
+// Feature normalization
+// ---------------------------------------------------------------------------
+
+/// Scale each raw BRISQUE feature to [-1, 1] using the LIVE training-set range.
+/// This must match the normalization applied when the model was trained.
+fn normalize(features: &[f64; 36]) -> [f64; 36] {
+    let mut out = [0.0f64; 36];
+    for i in 0..FEATURE_COUNT {
+        let range = FEATURE_MAX[i] - FEATURE_MIN[i];
+        out[i] = if range < 1e-10 {
+            0.0
+        } else {
+            2.0 * (features[i] - FEATURE_MIN[i]) / range - 1.0
+        };
+    }
+    out
+}
+
+// ---------------------------------------------------------------------------
+// SVR prediction
+// ---------------------------------------------------------------------------
+
+/// Compute the raw SVR decision value for a normalized feature vector.
+///
+/// decision(x) = Σ_i α_i · K(x, sv_i) + ρ
+///
+/// where K(x, sv) = exp(−γ · ‖x − sv‖²)
+fn svr_predict(x: &[f64; 36]) -> f64 {
+    let mut sum = 0.0f64;
+
+    for i in 0..SV_COUNT {
+        let sv = &SVS[i];
+        let mut sq_dist = 0.0f64;
+        for j in 0..FEATURE_COUNT {
+            let d = x[j] - sv[j] as f64;
+            sq_dist += d * d;
+        }
+        sum += ALPHAS[i] as f64 * (-GAMMA * sq_dist).exp();
+    }
+
+    sum + RHO
+}
+
+// ---------------------------------------------------------------------------
+// Public API
 // ---------------------------------------------------------------------------
 
 /// Compute the BRISQUE quality score in [0, 100] (lower = better).
 ///
-/// Feature layout (36 total, 18 per scale):
-///   [0]      GGD shape   (α)
-///   [1]      GGD σ²
-///   [2,6,10,14]   AGGD shape for H, V, D1, D2
-///   [3,7,11,15]   AGGD η   (mean, asymmetry indicator)
-///   [4,8,12,16]   AGGD σ_l
-///   [5,9,13,17]   AGGD σ_r
-///   [18..35]  same at half-resolution scale
-pub fn compute_brisque_score(f: &[f64; 36]) -> f64 {
-    // -----------------------------------------------------------------------
-    // Scale 1
-    // -----------------------------------------------------------------------
-    let alpha1 = f[0].clamp(0.2, 10.0);
-    // sigma_sq is mean-of-squares of MSCN coefficients (pixel-domain).
-    // Natural images: ~0.5–1.5; heavily distorted/noisy images: up to ~4.
-    // Normalize to [0, 1] against a reference max of 4.0 so this feature
-    // differentiates between images. The incorrect [0, 1] clamp caused all
-    // images with sigma_sq > 1 (the majority) to collapse to a constant 1.0.
-    // Will be replaced by the trained SVR feature normalization in #13.
-    let var1 = (f[1] / 4.0).clamp(0.0, 1.0);
-
-    let aggd_alpha1 = avg4(f[2], f[6], f[10], f[14], 0.1, 10.0);
-    let aggd_asym1 = avg_abs4(f[3], f[7], f[11], f[15], 2.0);
-
-    // -----------------------------------------------------------------------
-    // Scale 2
-    // -----------------------------------------------------------------------
-    let alpha2 = f[18].clamp(0.2, 10.0);
-    let var2 = (f[19] / 4.0).clamp(0.0, 1.0);
-
-    let aggd_alpha2 = avg4(f[20], f[24], f[28], f[32], 0.1, 10.0);
-    let aggd_asym2 = avg_abs4(f[21], f[25], f[29], f[33], 2.0);
-
-    // -----------------------------------------------------------------------
-    // Per-component distortion factors in [0, 1]   (0 = pristine, 1 = worst)
-    // -----------------------------------------------------------------------
-
-    // GGD shape: natural images sit at α ≈ 2–3.
-    // Below 0.5 → extremely distorted; above 3 → pristine (and also flat/degenerate).
-    let ggd_d1 = ggd_distortion(alpha1);
-    let ggd_d2 = ggd_distortion(alpha2);
-
-    // Local variance contribution, normalised to [0, 1].
-    let var_d1 = var1;
-    let var_d2 = var2;
-
-    // AGGD shape for pairwise products.
-    // Natural pairwise products: β ≈ 1.2–2.0; distorted → lower.
-    let aggd_d1 = aggd_distortion(aggd_alpha1);
-    let aggd_d2 = aggd_distortion(aggd_alpha2);
-
-    // Pairwise-product asymmetry: pristine images are nearly symmetric (η ≈ 0).
-    let asym_d1 = aggd_asym1; // already in [0, 1]
-    let asym_d2 = aggd_asym2;
-
-    // -----------------------------------------------------------------------
-    // Weighted sum → [0, 100]
-    // Weights sum to 100; scale-1 is weighted more than scale-2.
-    // -----------------------------------------------------------------------
-    let score = ggd_d1 * 20.0
-        + ggd_d2 * 10.0
-        + var_d1 * 15.0
-        + var_d2 * 8.0
-        + aggd_d1 * 15.0
-        + aggd_d2 * 8.0
-        + asym_d1 * 12.0
-        + asym_d2 * 12.0;
-
-    score.clamp(0.0, 100.0)
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/// Distortion factor from GGD shape α.
-/// Maps [0.5, 3.0] → [1.0, 0.0] (lower α = more distorted = score closer to 1).
-#[inline]
-fn ggd_distortion(alpha: f64) -> f64 {
-    (1.0 - (alpha - 0.5) / 2.5).clamp(0.0, 1.0)
-}
-
-/// Distortion factor from AGGD shape β.
-/// Maps [0.5, 2.5] → [1.0, 0.0].
-#[inline]
-fn aggd_distortion(beta: f64) -> f64 {
-    (1.0 - (beta - 0.5) / 2.0).clamp(0.0, 1.0)
-}
-
-/// Average of four clamped values.
-#[inline]
-fn avg4(a: f64, b: f64, c: f64, d: f64, lo: f64, hi: f64) -> f64 {
-    (a.clamp(lo, hi) + b.clamp(lo, hi) + c.clamp(lo, hi) + d.clamp(lo, hi)) / 4.0
-}
-
-/// Average absolute value of four values, normalised by `max_abs`.
-#[inline]
-fn avg_abs4(a: f64, b: f64, c: f64, d: f64, max_abs: f64) -> f64 {
-    let avg = (a.abs() + b.abs() + c.abs() + d.abs()) / 4.0;
-    (avg / max_abs).clamp(0.0, 1.0)
+/// Raw SVR output is clamped to [0, 100]; scores outside that range are
+/// uncommon on natural images but can occur on synthetic or pathological inputs.
+pub fn compute_brisque_score(features: &[f64; 36]) -> f64 {
+    let x = normalize(features);
+    svr_predict(&x).clamp(0.0, 100.0)
 }
 
 // ---------------------------------------------------------------------------
