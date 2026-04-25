@@ -1,11 +1,11 @@
-/// Statistical distribution fitting for BRISQUE feature extraction.
-///
-/// Implements:
-///   - GGD  (Generalized Gaussian Distribution) fitting
-///   - AGGD (Asymmetric GGD) fitting
-///
-/// Both use a binary-search approach to invert the moment-ratio function
-/// r(α) = Γ(2/α)² / (Γ(1/α)·Γ(3/α)).
+//! Statistical distribution fitting for BRISQUE feature extraction.
+//!
+//! Implements:
+//!   - GGD  (Generalized Gaussian Distribution) fitting
+//!   - AGGD (Asymmetric GGD) fitting
+//!
+//! Both use a binary-search approach to invert the moment-ratio function
+//! r(α) = Γ(2/α)² / (Γ(1/α)·Γ(3/α)).
 
 // ---------------------------------------------------------------------------
 // Gamma function (Lanczos approximation, accurate to ~15 sig. figs)
@@ -18,14 +18,14 @@ pub fn gamma_fn(x: f64) -> f64 {
         // Lanczos coefficients (g = 7)
         const G: f64 = 7.0;
         const C: [f64; 9] = [
-            0.99999999999980993,
+            0.999_999_999_999_809_9,
             676.5203681218851,
             -1259.1392167224028,
-            771.32342877765313,
-            -176.61502916214059,
+            771.323_428_777_653_1,
+            -176.615_029_162_140_6,
             12.507343278686905,
             -0.13857109526572012,
-            9.9843695780195716e-6,
+            9.984_369_578_019_572e-6,
             1.5056327351493116e-7,
         ];
 
@@ -143,10 +143,8 @@ pub fn fit_aggd(data: &[f64]) -> (f64, f64, f64, f64) {
     }
 
     let r_hat = (mean_abs * mean_abs) / mean_sq;
-    let r_hat_norm = r_hat
-        * (gamma_hat.powi(3) + 1.0)
-        * (gamma_hat + 1.0)
-        / (gamma_hat.powi(2) + 1.0).powi(2);
+    let r_hat_norm =
+        r_hat * (gamma_hat.powi(3) + 1.0) * (gamma_hat + 1.0) / (gamma_hat.powi(2) + 1.0).powi(2);
 
     let alpha = find_shape(r_hat_norm);
 

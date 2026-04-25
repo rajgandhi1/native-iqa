@@ -1,7 +1,7 @@
-/// Blur detection via Laplacian variance.
-///
-/// The 2-D Laplacian kernel [[0,1,0],[1,-4,1],[0,1,0]] measures local curvature.
-/// Sharp images produce high variance in the response; blurry images have low variance.
+//! Blur detection via Laplacian variance.
+//!
+//! The 2-D Laplacian kernel [[0,1,0],[1,-4,1],[0,1,0]] measures local curvature.
+//! Sharp images produce high variance in the response; blurry images have low variance.
 
 const BLUR_THRESHOLD: f64 = 80.0;
 
@@ -16,7 +16,7 @@ fn laplacian(pixels: &[f64], width: usize, height: usize) -> Vec<f64> {
                      + pixels[idx + width]       // bottom
                      + pixels[idx - 1]           // left
                      + pixels[idx + 1]           // right
-                     - 4.0 * pixels[idx];        // centre
+                     - 4.0 * pixels[idx]; // centre
             out[idx] = resp;
         }
     }

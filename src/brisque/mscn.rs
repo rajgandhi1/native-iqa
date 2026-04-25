@@ -1,8 +1,8 @@
-/// MSCN (Mean Subtracted Contrast Normalized) coefficient computation.
-///
-/// MSCN(i,j) = (I(i,j) - μ(i,j)) / (σ(i,j) + C)
-///
-/// Where μ and σ are computed with a 7×7 Gaussian kernel (σ = 7/6).
+//! MSCN (Mean Subtracted Contrast Normalized) coefficient computation.
+//!
+//! MSCN(i,j) = (I(i,j) - μ(i,j)) / (σ(i,j) + C)
+//!
+//! Where μ and σ are computed with a 7×7 Gaussian kernel (σ = 7/6).
 
 const KERNEL_SIZE: usize = 7;
 const KERNEL_SIGMA: f64 = 7.0 / 6.0;

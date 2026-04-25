@@ -1,5 +1,4 @@
 /// Image decoding, resizing, and dispatch to BRISQUE + heuristics.
-
 use image::{DynamicImage, GenericImageView, GrayImage};
 
 use crate::brisque;
@@ -83,8 +82,7 @@ pub fn analyze(data: &[u8]) -> Result<AnalysisResult, String> {
     let brisque_res = brisque::analyze(&pixels_f64, width as usize, height as usize);
 
     // Heuristics
-    let heuristics_res =
-        heuristics::run(&pixels_f64, &pixels_u8, width as usize, height as usize);
+    let heuristics_res = heuristics::run(&pixels_f64, &pixels_u8, width as usize, height as usize);
 
     Ok(AnalysisResult {
         score: brisque_res.score,
