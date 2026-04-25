@@ -38,7 +38,7 @@ export declare function validate(buffer: Buffer, options?: ValidationOptions | u
 
 export interface ValidationOptions {
   /** Reject images with score above this threshold (lower = stricter). */
-  minScore?: number
+  maxScore?: number
   /** Reject blurry images when true. */
   rejectBlurry?: boolean
   /** Reject non-normal exposures when true. */

@@ -37,7 +37,7 @@ pub struct IqaResult {
 #[napi(object)]
 pub struct ValidationOptions {
     /// Reject images with score above this threshold (lower = stricter).
-    pub min_score: Option<f64>,
+    pub max_score: Option<f64>,
     /// Reject blurry images when true.
     pub reject_blurry: Option<bool>,
     /// Reject non-normal exposures when true.
@@ -93,9 +93,7 @@ impl Task for QuickScoreTask {
     type JsValue = f64;
 
     fn compute(&mut self) -> napi::Result<Self::Output> {
-        pipeline::analyze(&self.data)
-            .map(|r| r.score)
-            .map_err(napi::Error::from_reason)
+        pipeline::score_only(&self.data).map_err(napi::Error::from_reason)
     }
 
     fn resolve(&mut self, _env: Env, output: Self::Output) -> napi::Result<Self::JsValue> {
@@ -119,7 +117,7 @@ impl Task for ValidateTask {
 
         // Clone options for use in resolve
         let opts = ValidationOptions {
-            min_score: self.options.min_score,
+            max_score: self.options.max_score,
             reject_blurry: self.options.reject_blurry,
             reject_bad_exposure: self.options.reject_bad_exposure,
         };
@@ -130,11 +128,11 @@ impl Task for ValidateTask {
         let (result, opts) = output;
         let mut failures = Vec::new();
 
-        let min_score = opts.min_score.unwrap_or(60.0);
-        if result.score > min_score {
+        let max_score = opts.max_score.unwrap_or(60.0);
+        if result.score > max_score {
             failures.push(format!(
                 "Score {:.1} exceeds threshold {:.1}",
-                result.score, min_score
+                result.score, max_score
             ));
         }
 
@@ -214,7 +212,7 @@ pub fn validate(buffer: Buffer, options: Option<ValidationOptions>) -> AsyncTask
     AsyncTask::new(ValidateTask {
         data: buffer.to_vec(),
         options: options.unwrap_or(ValidationOptions {
-            min_score: Some(60.0),
+            max_score: Some(60.0),
             reject_blurry: Some(false),
             reject_bad_exposure: Some(false),
         }),
