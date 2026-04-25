@@ -47,7 +47,13 @@ pub fn compute_brisque_score(f: &[f64; 36]) -> f64 {
     // Scale 1
     // -----------------------------------------------------------------------
     let alpha1 = f[0].clamp(0.2, 10.0);
-    let var1 = f[1].clamp(0.0, 1.0);
+    // sigma_sq is mean-of-squares of MSCN coefficients (pixel-domain).
+    // Natural images: ~0.5–1.5; heavily distorted/noisy images: up to ~4.
+    // Normalize to [0, 1] against a reference max of 4.0 so this feature
+    // differentiates between images. The incorrect [0, 1] clamp caused all
+    // images with sigma_sq > 1 (the majority) to collapse to a constant 1.0.
+    // Will be replaced by the trained SVR feature normalization in #13.
+    let var1 = (f[1] / 4.0).clamp(0.0, 1.0);
 
     let aggd_alpha1 = avg4(f[2], f[6], f[10], f[14], 0.1, 10.0);
     let aggd_asym1 = avg_abs4(f[3], f[7], f[11], f[15], 2.0);
@@ -56,7 +62,7 @@ pub fn compute_brisque_score(f: &[f64; 36]) -> f64 {
     // Scale 2
     // -----------------------------------------------------------------------
     let alpha2 = f[18].clamp(0.2, 10.0);
-    let var2 = f[19].clamp(0.0, 1.0);
+    let var2 = (f[19] / 4.0).clamp(0.0, 1.0);
 
     let aggd_alpha2 = avg4(f[20], f[24], f[28], f[32], 0.1, 10.0);
     let aggd_asym2 = avg_abs4(f[21], f[25], f[29], f[33], 2.0);
@@ -70,8 +76,8 @@ pub fn compute_brisque_score(f: &[f64; 36]) -> f64 {
     let ggd_d1 = ggd_distortion(alpha1);
     let ggd_d2 = ggd_distortion(alpha2);
 
-    // Local variance in [0, 1] (captured by normalised σ²).
-    let var_d1 = var1; // already in [0, 1] after clamp
+    // Local variance contribution, normalised to [0, 1].
+    let var_d1 = var1;
     let var_d2 = var2;
 
     // AGGD shape for pairwise products.
