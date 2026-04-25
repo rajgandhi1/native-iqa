@@ -1,7 +1,7 @@
-/// Noise estimation via variance in low-gradient (flat) regions.
-///
-/// Flat regions are identified by a gradient magnitude below a threshold.
-/// The variance of pixel values within those regions reflects sensor noise.
+//! Noise estimation via variance in low-gradient (flat) regions.
+//!
+//! Flat regions are identified by a gradient magnitude below a threshold.
+//! The variance of pixel values within those regions reflects sensor noise.
 
 const GRADIENT_THRESHOLD: f64 = 8.0;
 

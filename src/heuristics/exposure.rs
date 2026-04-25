@@ -1,8 +1,8 @@
-/// Exposure detection via histogram analysis.
-///
-/// Clipping thresholds:
-///   Under-exposed : > 5 % of pixels below 30  (shadow clipping)
-///   Over-exposed  : > 5 % of pixels above 225 (highlight clipping)
+//! Exposure detection via histogram analysis.
+//!
+//! Clipping thresholds:
+//!   Under-exposed : > 5 % of pixels below 30  (shadow clipping)
+//!   Over-exposed  : > 5 % of pixels above 225 (highlight clipping)
 
 const SHADOW_CLIP: u8 = 30;
 const HIGHLIGHT_CLIP: u8 = 225;

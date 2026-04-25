@@ -1,32 +1,32 @@
-/// BRISQUE scoring via calibrated feature mapping.
-///
-/// # Score semantics
-///
-/// The score is in [0, 100] where **lower = better quality**:
-///   0–20  Excellent
-///  20–40  Good
-///  40–60  Acceptable
-///  60+    Poor
-///
-/// # Algorithm
-///
-/// V1 uses a direct, interpretable linear feature-to-score mapping calibrated
-/// against published BRISQUE score distributions on the LIVE IQA database.
-/// The mapping captures the three main axes of no-reference quality:
-///
-///   1. GGD shape (α) of MSCN coefficients:
-///        Natural images → α ≈ 2–3 (Gaussian-like).
-///        Distorted images → α < 1.8 (heavier tails).
-///
-///   2. MSCN local variance (σ²):
-///        Low for flat / blurry images, high for noisy images.
-///
-///   3. AGGD shape of pairwise products:
-///        High for structured natural images, low for heavily distorted ones.
-///
-/// A future upgrade can drop in a full libsvm epsilon-SVR model (trained on
-/// the LIVE dataset) by replacing `compute_brisque_score` with an SVM
-/// decision function while keeping the rest of the pipeline unchanged.
+//! BRISQUE scoring via calibrated feature mapping.
+//!
+//! # Score semantics
+//!
+//! The score is in [0, 100] where lower = better quality:
+//!   0–20  Excellent
+//!  20–40  Good
+//!  40–60  Acceptable
+//!  60+    Poor
+//!
+//! # Algorithm
+//!
+//! V1 uses a direct, interpretable linear feature-to-score mapping calibrated
+//! against published BRISQUE score distributions on the LIVE IQA database.
+//! The mapping captures the three main axes of no-reference quality:
+//!
+//!   1. GGD shape (α) of MSCN coefficients:
+//!      Natural images → α ≈ 2–3 (Gaussian-like).
+//!      Distorted images → α < 1.8 (heavier tails).
+//!
+//!   2. MSCN local variance (σ²):
+//!      Low for flat / blurry images, high for noisy images.
+//!
+//!   3. AGGD shape of pairwise products:
+//!      High for structured natural images, low for heavily distorted ones.
+//!
+//! A future upgrade can drop in a full libsvm epsilon-SVR model (trained on
+//! the LIVE dataset) by replacing `compute_brisque_score` with an SVM
+//! decision function while keeping the rest of the pipeline unchanged.
 
 // ---------------------------------------------------------------------------
 // Scoring
