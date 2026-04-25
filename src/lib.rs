@@ -8,6 +8,7 @@ mod pipeline;
 use napi::bindgen_prelude::*;
 use napi::Task;
 use napi_derive::napi;
+use rayon::prelude::*;
 
 // ---------------------------------------------------------------------------
 // Exported types
@@ -167,7 +168,7 @@ impl Task for BatchTask {
     fn compute(&mut self) -> napi::Result<Self::Output> {
         // Process each image; propagate first error.
         self.items
-            .iter()
+            .par_iter()
             .map(|d| pipeline::analyze(d).map_err(napi::Error::from_reason))
             .collect()
     }
