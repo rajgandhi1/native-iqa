@@ -5,8 +5,8 @@
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
-    "build": "cargo build --release && node scripts/copy-binary.js",
-    "build:debug": "cargo build",
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform",
     "test": "node --test __tests__/index.test.js",
     "prepublishOnly": "npm run build"
   },

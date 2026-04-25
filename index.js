@@ -15,22 +15,28 @@ const os = require('os');
 // Load native binary
 // ---------------------------------------------------------------------------
 
+// Maps Node's os.platform()+os.arch() to the napi-rs binary naming convention.
+const PLATFORM_MAP = {
+  'darwin-arm64':  'darwin-arm64',
+  'darwin-x64':    'darwin-x64',
+  'linux-x64':     'linux-x64-gnu',
+  'linux-arm64':   'linux-arm64-gnu',
+  'win32-x64':     'win32-x64-msvc',
+};
+
 function loadNative() {
-  const platform = os.platform();
-  const arch = os.arch();
-  const name = `native_iqa.${platform}-${arch}.node`;
+  const key = `${os.platform()}-${os.arch()}`;
+  const triple = PLATFORM_MAP[key];
+
+  if (!triple) {
+    throw new Error(`native-iqa: unsupported platform "${key}".`);
+  }
+
+  const name = `native_iqa.${triple}.node`;
   const local = path.join(__dirname, name);
 
   if (existsSync(local)) {
     return require(local);
-  }
-
-  // Fallback: try the unqualified name (useful during development)
-  const ext = { darwin: '.dylib', linux: '.so', win32: '.dll' }[platform] ?? '.so';
-  const prefix = platform === 'win32' ? '' : 'lib';
-  const fallback = path.join(__dirname, 'target', 'release', `${prefix}native_iqa${ext}`);
-  if (existsSync(fallback)) {
-    return require(fallback);
   }
 
   throw new Error(
