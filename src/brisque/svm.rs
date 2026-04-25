@@ -4,7 +4,9 @@
 //! (brisque_model_live.yml + brisque_range_live.yml)
 //! Trained on the LIVE IQA database (EPS-SVR, C=1024, gamma=0.05).
 
-use super::model_data::{ALPHAS, FEATURE_MAX, FEATURE_MIN, FEATURE_COUNT, GAMMA, RHO, SVS, SV_COUNT};
+use super::model_data::{
+    ALPHAS, FEATURE_COUNT, FEATURE_MAX, FEATURE_MIN, GAMMA, RHO, SVS, SV_COUNT,
+};
 
 // ---------------------------------------------------------------------------
 // Feature normalization
