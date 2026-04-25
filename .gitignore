@@ -24,3 +24,4 @@ yarn-error.log*
 
 # Claude Code local session config (not project config)
 .claude/
+CLAUDE.md

@@ -12,6 +12,15 @@
   },
   "keywords": ["image", "quality", "iqa", "brisque", "native", "napi"],
   "license": "MIT",
+  "author": "rajgandhi1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rajgandhi1/native-iqa.git"
+  },
+  "homepage": "https://github.com/rajgandhi1/native-iqa#readme",
+  "bugs": {
+    "url": "https://github.com/rajgandhi1/native-iqa/issues"
+  },
   "devDependencies": {
     "@napi-rs/cli": "^3.6.2"
   },
@@ -29,6 +38,7 @@
   "files": [
     "index.js",
     "index.d.ts",
-    "native_iqa.*.node"
+    "native_iqa.*.node",
+    "LICENSE"
   ]
 }
