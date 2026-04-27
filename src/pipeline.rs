@@ -1,5 +1,5 @@
 /// Image decoding, resizing, and dispatch to BRISQUE + heuristics.
-use image::{DynamicImage, GenericImageView, GrayImage};
+use image::{DynamicImage, GenericImageView, GrayImage, ImageBuffer, Luma};
 
 use crate::brisque;
 use crate::heuristics;
@@ -48,8 +48,19 @@ fn maybe_resize(img: DynamicImage) -> DynamicImage {
 // Grayscale conversion
 // ---------------------------------------------------------------------------
 
+/// Convert to grayscale using BT.601 weights: Y = 0.299R + 0.587G + 0.114B.
+/// Matches OpenCV's cv::COLOR_BGR2GRAY, which is what the BRISQUE model was trained with.
 fn to_gray(img: &DynamicImage) -> GrayImage {
-    img.to_luma8()
+    let rgb = img.to_rgb8();
+    let (w, h) = rgb.dimensions();
+    ImageBuffer::from_fn(w, h, |x, y| {
+        let p = rgb.get_pixel(x, y);
+        let r = p[0] as f64;
+        let g = p[1] as f64;
+        let b = p[2] as f64;
+        let luma = (0.299 * r + 0.587 * g + 0.114 * b).round() as u8;
+        Luma([luma])
+    })
 }
 
 fn gray_to_f64(gray: &GrayImage) -> Vec<f64> {
@@ -76,9 +87,10 @@ pub fn score_only(data: &[u8]) -> Result<f64, String> {
     let gray = to_gray(&img);
 
     let (width, height) = gray.dimensions();
-    let pixels_f64 = gray_to_f64(&gray);
+    // BRISQUE model (OpenCV/LIVE weights) expects pixels normalised to [0, 1].
+    let pixels_brisque: Vec<f64> = gray_to_f64(&gray).iter().map(|&p| p / 255.0).collect();
 
-    Ok(brisque::analyze(&pixels_f64, width as usize, height as usize).score)
+    Ok(brisque::analyze(&pixels_brisque, width as usize, height as usize).score)
 }
 
 pub fn analyze(data: &[u8]) -> Result<AnalysisResult, String> {
@@ -97,10 +109,13 @@ pub fn analyze(data: &[u8]) -> Result<AnalysisResult, String> {
 
     let (width, height) = gray.dimensions();
     let pixels_u8: Vec<u8> = gray.pixels().map(|p| p.0[0]).collect();
+    // Heuristics operate on the [0, 255] scale their thresholds were tuned for.
     let pixels_f64 = gray_to_f64(&gray);
+    // BRISQUE model (OpenCV/LIVE weights) expects pixels normalised to [0, 1].
+    let pixels_brisque: Vec<f64> = pixels_f64.iter().map(|&p| p / 255.0).collect();
 
     // BRISQUE
-    let brisque_res = brisque::analyze(&pixels_f64, width as usize, height as usize);
+    let brisque_res = brisque::analyze(&pixels_brisque, width as usize, height as usize);
 
     // Heuristics
     let heuristics_res = heuristics::run(&pixels_f64, &pixels_u8, width as usize, height as usize);

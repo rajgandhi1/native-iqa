@@ -33,8 +33,9 @@ fn normalize(features: &[f64; 36]) -> [f64; 36] {
 
 /// Compute the raw SVR decision value for a normalized feature vector.
 ///
-/// decision(x) = Σ_i α_i · K(x, sv_i) + ρ
+/// decision(x) = Σ_i α_i · K(x, sv_i) − ρ
 ///
+/// Matches libsvm convention: rho is the negative bias, so `sum - rho`.
 /// where K(x, sv) = exp(−γ · ‖x − sv‖²)
 fn svr_predict(x: &[f64; 36]) -> f64 {
     let mut sum = 0.0f64;
@@ -49,7 +50,7 @@ fn svr_predict(x: &[f64; 36]) -> f64 {
         sum += ALPHAS[i] as f64 * (-GAMMA * sq_dist).exp();
     }
 
-    sum + RHO
+    sum - RHO
 }
 
 // ---------------------------------------------------------------------------
@@ -62,7 +63,8 @@ fn svr_predict(x: &[f64; 36]) -> f64 {
 /// uncommon on natural images but can occur on synthetic or pathological inputs.
 pub fn compute_brisque_score(features: &[f64; 36]) -> f64 {
     let x = normalize(features);
-    svr_predict(&x).clamp(0.0, 100.0)
+    let raw = svr_predict(&x);
+    raw.clamp(0.0, 100.0)
 }
 
 // ---------------------------------------------------------------------------

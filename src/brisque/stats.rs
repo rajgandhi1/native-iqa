@@ -115,12 +115,14 @@ pub fn fit_aggd(data: &[f64]) -> (f64, f64, f64, f64) {
     }
     let n = data.len() as f64;
 
-    // Split into negative / non-negative
+    // Split into strictly negative / strictly positive (zeros excluded from both halves).
+    // Matches OpenCV's AGGDfit which checks pt > 0 and pt < 0 separately,
+    // leaving zero-valued pixels uncounted in sigma_l and sigma_r.
     let left_sq: f64 = data.iter().filter(|&&x| x < 0.0).map(|x| x * x).sum();
     let left_n = data.iter().filter(|&&x| x < 0.0).count() as f64;
 
-    let right_sq: f64 = data.iter().filter(|&&x| x >= 0.0).map(|x| x * x).sum();
-    let right_n = data.iter().filter(|&&x| x >= 0.0).count() as f64;
+    let right_sq: f64 = data.iter().filter(|&&x| x > 0.0).map(|x| x * x).sum();
+    let right_n = data.iter().filter(|&&x| x > 0.0).count() as f64;
 
     let sigma_l = if left_n > 0.0 {
         (left_sq / left_n).sqrt()
@@ -148,10 +150,13 @@ pub fn fit_aggd(data: &[f64]) -> (f64, f64, f64, f64) {
 
     let alpha = find_shape(r_hat_norm);
 
-    // Mean parameter η
+    // Mean parameter η = (σ_r − σ_l) · Γ(2/α) / √(Γ(1/α)·Γ(3/α))
+    // This is derived from the AGGD beta parameterisation: β = σ · √(Γ(1/α)/Γ(3/α))
+    // and η = (β_r − β_l) · Γ(2/α) / Γ(1/α).
     let g1 = gamma_fn(1.0 / alpha);
     let g2 = gamma_fn(2.0 / alpha);
-    let eta = (sigma_r - sigma_l) * g2 / g1;
+    let g3 = gamma_fn(3.0 / alpha);
+    let eta = (sigma_r - sigma_l) * g2 / (g1 * g3).sqrt();
 
     (alpha, eta, sigma_l, sigma_r)
 }

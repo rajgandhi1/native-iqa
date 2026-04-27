@@ -3,10 +3,13 @@
 //! MSCN(i,j) = (I(i,j) - μ(i,j)) / (σ(i,j) + C)
 //!
 //! Where μ and σ are computed with a 7×7 Gaussian kernel (σ = 7/6).
+//! Border handling: BORDER_REPLICATE (clamp), matching OpenCV qualitybrisque.cpp.
 
 const KERNEL_SIZE: usize = 7;
 const KERNEL_SIGMA: f64 = 7.0 / 6.0;
-const C: f64 = 1.0;
+// Regularisation constant added to local sigma before division.
+// OpenCV's BRISQUE adds 1/255 to sigma (on [0,1] images).
+const C: f64 = 1.0 / 255.0;
 
 /// Build a 1-D normalised Gaussian kernel.
 fn gaussian_kernel_1d() -> [f64; KERNEL_SIZE] {
@@ -22,18 +25,11 @@ fn gaussian_kernel_1d() -> [f64; KERNEL_SIZE] {
     k
 }
 
-/// Reflect-101 boundary extension: mirror without repeating the edge pixel.
-/// Index -1 → 1, -2 → 2 … index (N) → N-2, (N+1) → N-3 …
+/// BORDER_REPLICATE (clamp): repeat the nearest edge pixel.
+/// Matches cv::BORDER_REPLICATE used by OpenCV's qualitybrisque.cpp.
 #[inline(always)]
-fn reflect(i: i32, size: i32) -> usize {
-    let i = if i < 0 {
-        -i
-    } else if i >= size {
-        2 * size - i - 2
-    } else {
-        i
-    };
-    i.max(0) as usize
+fn replicate(i: i32, size: i32) -> usize {
+    i.clamp(0, size - 1) as usize
 }
 
 /// 2-D separable Gaussian filter (horizontal then vertical pass).
@@ -47,7 +43,7 @@ pub fn gaussian_filter(src: &[f64], width: usize, height: usize) -> Vec<f64> {
         for col in 0..width {
             let mut acc = 0.0f64;
             for (ki, &kv) in k.iter().enumerate() {
-                let sc = reflect(col as i32 + ki as i32 - half, width as i32);
+                let sc = replicate(col as i32 + ki as i32 - half, width as i32);
                 acc += kv * src[row * width + sc];
             }
             tmp[row * width + col] = acc;
@@ -60,7 +56,7 @@ pub fn gaussian_filter(src: &[f64], width: usize, height: usize) -> Vec<f64> {
         for col in 0..width {
             let mut acc = 0.0f64;
             for (ki, &kv) in k.iter().enumerate() {
-                let sr = reflect(row as i32 + ki as i32 - half, height as i32);
+                let sr = replicate(row as i32 + ki as i32 - half, height as i32);
                 acc += kv * tmp[sr * width + col];
             }
             out[row * width + col] = acc;
@@ -69,22 +65,25 @@ pub fn gaussian_filter(src: &[f64], width: usize, height: usize) -> Vec<f64> {
     out
 }
 
-/// Compute MSCN coefficients from a float grayscale image (values in [0, 255]).
+/// Compute MSCN coefficients from a float grayscale image (values in [0, 1]).
 ///
 /// Returns the MSCN map as a flat Vec<f64> in row-major order.
+///
+/// Variance is computed as E_w[I²] − μ² (matching OpenCV's brisque implementation).
 pub fn compute_mscn(pixels: &[f64], width: usize, height: usize) -> Vec<f64> {
-    // Local mean
+    // Local mean: μ_i = E_w[I]
     let mu = gaussian_filter(pixels, width, height);
 
-    // Local variance: E[(x - μ)²] via another Gaussian pass
-    let diff_sq: Vec<f64> = pixels
+    // Local variance: σ²_i = E_w[I²] − μ_i²  (OpenCV formula)
+    let pixels_sq: Vec<f64> = pixels.iter().map(|&p| p * p).collect();
+    let mean_sq = gaussian_filter(&pixels_sq, width, height);
+    let sigma_sq: Vec<f64> = mean_sq
         .iter()
         .zip(mu.iter())
-        .map(|(p, m)| (p - m).powi(2))
+        .map(|(&ms, &m)| (ms - m * m).max(0.0))
         .collect();
-    let sigma_sq = gaussian_filter(&diff_sq, width, height);
 
-    // MSCN = (x - μ) / (σ + C)
+    // MSCN = (I − μ) / (σ + C)
     pixels
         .iter()
         .zip(mu.iter())

@@ -25,3 +25,7 @@ yarn-error.log*
 # Claude Code local session config (not project config)
 .claude/
 CLAUDE.md
+
+# Benchmark — generated images and reference CSV (produced by compare_reference.py)
+bench/images/
+bench/reference_scores.csv
