@@ -15,6 +15,7 @@
     "build:debug": "napi build --platform",
     "test": "node --test __tests__/index.test.js",
     "bench": "node bench/run.js",
+    "compare": "node bench/compare_reference.js",
     "prepublishOnly": "npm run build"
   },
   "keywords": ["image", "quality", "iqa", "brisque", "native", "napi"],
