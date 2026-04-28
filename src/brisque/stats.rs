@@ -79,6 +79,7 @@ fn find_shape(ratio: f64) -> f64 {
 /// Returns `(α, σ²)` where:
 ///   α  = shape parameter  (Gaussian ≈ 2.0; heavier tails → α < 2)
 ///   σ² = variance
+#[allow(dead_code)]
 pub fn fit_ggd(data: &[f64]) -> (f64, f64) {
     if data.is_empty() {
         return (2.0, 0.0);
