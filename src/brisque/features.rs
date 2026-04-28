@@ -9,7 +9,7 @@
 ///   4  from AGGD fit to each of 4 pairwise-product maps (H, V, D1, D2):
 ///      [alpha, eta, σ_l², σ_r²]   — variances, matching OpenCV qualitybrisque.cpp
 use super::mscn::compute_mscn;
-use super::stats::{fit_aggd};
+use super::stats::fit_aggd;
 
 /// Extract 18 BRISQUE features from one scale.
 /// Mirrors OpenCV's ComputeBrisqueFeature() in qualitybrisque.cpp exactly.
@@ -59,15 +59,28 @@ fn extract_scale_features(pixels: &[f64], width: usize, height: usize) -> [f64; 
 
     [
         // MSCN: [alpha, (σ_l² + σ_r²)/2]
-        alpha, sigma_sq,
+        alpha,
+        sigma_sq,
         // H:  [alpha, eta, σ_l², σ_r²]
-        h_alpha,  h_eta,  h_sl * h_sl,  h_sr * h_sr,
+        h_alpha,
+        h_eta,
+        h_sl * h_sl,
+        h_sr * h_sr,
         // V:  [alpha, eta, σ_l², σ_r²]
-        v_alpha,  v_eta,  v_sl * v_sl,  v_sr * v_sr,
+        v_alpha,
+        v_eta,
+        v_sl * v_sl,
+        v_sr * v_sr,
         // D1: [alpha, eta, σ_l², σ_r²]
-        d1_alpha, d1_eta, d1_sl * d1_sl, d1_sr * d1_sr,
+        d1_alpha,
+        d1_eta,
+        d1_sl * d1_sl,
+        d1_sr * d1_sr,
         // D2: [alpha, eta, σ_l², σ_r²]
-        d2_alpha, d2_eta, d2_sl * d2_sl, d2_sr * d2_sr,
+        d2_alpha,
+        d2_eta,
+        d2_sl * d2_sl,
+        d2_sr * d2_sr,
     ]
 }
 
